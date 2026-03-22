@@ -4,6 +4,12 @@
 
 **Clarity for your startup idea. Verdicts you can act on.**
 
+## 🖥️ Best Experience
+
+PivotIQ is currently optimized for desktop usage to ensure clarity in reading detailed validation reports and score breakdowns.
+
+Mobile responsiveness is a planned improvement for future iterations.
+
 ---
 
 ## 🧠 Overview
