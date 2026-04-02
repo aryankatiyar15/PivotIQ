@@ -6,6 +6,7 @@ import TypingIndicator from "@/components/Chat/TypingIndicator";
 import ChatInput from "@/components/Chat/ChatInput";
 import ValidationReport from "@/components/Report/ValidationReport";
 import { evaluateIdea, type IdeaInput, type EvaluationResult } from "@/lib/evaluation";
+import { evaluateIdeaWithGrok } from "@/lib/grokEvaluation";
 
 interface Message {
   role: "bot" | "user";
@@ -82,14 +83,8 @@ const Evaluate = () => {
 
     if (nextQ < QUESTIONS.length) {
       setCurrentQ(nextQ);
-      // If optional question and user skips
-      if (nextQ === 3) {
-        await addBotMessage(QUESTIONS[nextQ]);
-      } else {
-        await addBotMessage(QUESTIONS[nextQ]);
-      }
+      await addBotMessage(QUESTIONS[nextQ]);
     } else {
-      // Check if last answer was skip for competitors
       runAnalysis(newAnswers);
     }
   };
@@ -97,9 +92,12 @@ const Evaluate = () => {
   const runAnalysis = async (ans: string[]) => {
     setPhase("analyzing");
 
-    for (const msg of ANALYSIS_MESSAGES) {
-      await addBotMessage(msg);
-    }
+    // Show analysis messages with delays while Grok call runs in parallel
+    const messagePromise = (async () => {
+      for (const msg of ANALYSIS_MESSAGES) {
+        await addBotMessage(msg);
+      }
+    })();
 
     const input: IdeaInput = {
       problem: ans[0],
@@ -108,10 +106,21 @@ const Evaluate = () => {
       competitors: ans[3]?.toLowerCase() === "skip" ? undefined : ans[3],
     };
 
-    const evalResult = evaluateIdea(input);
+    // Run Grok and animation messages in parallel
+    const [evalResult] = await Promise.all([
+      evaluateIdeaWithGrok(input).catch((err) => {
+        // Fallback to mock if Grok fails (e.g. no API key, network error)
+        console.warn("Grok evaluation failed, falling back to mock:", err.message);
+        return evaluateIdea(input);
+      }),
+      messagePromise,
+    ]);
+
     setResult(evalResult);
 
-    await addBotMessage(`Analysis complete. Your verdict: ${evalResult.verdict}. Stress Score: ${evalResult.stress_score}/100.`);
+    await addBotMessage(
+      `Analysis complete. Your verdict: ${evalResult.verdict}. Stress Score: ${evalResult.stress_score}/100.`
+    );
 
     setTimeout(() => setPhase("report"), 1500);
   };
