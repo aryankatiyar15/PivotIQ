@@ -72,7 +72,7 @@ PivotIQ uses the **Groq API** for fast, structured AI evaluation. The evaluation
 Create a `.env` file in the root of the project:
 
 ```env
-VITE_GROQ_API_KEY=your_api_key_here
+VITE_GROK_API_KEY=your_api_key_here
 ```
 You can get your Groq API key from [console.groq.com](https://console.groq.com).
 
